@@ -9,4 +9,4 @@ class StoppableThread(threading.Thread):
 		self._stop.set()
 
 	def isStopped(self):
-		return self.stop.isSet()
+		return self._stop.isSet()

@@ -53,6 +53,10 @@ class Users:
 		self._users = users
 		self.updateFrame()
 
+	def clear(self):
+		self._users = []
+		self.updateFrame()
+
 	# the user list should not contain users who didnt ping for the last $(MAX_ALIVE_DELAY) seconds
 	def removeOldUsers(self):
 		while True:

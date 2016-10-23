@@ -23,7 +23,7 @@ class Listener(StoppableThread):
 			print "Binding error (address already in use ?)"
 		else:
 			print "Listening on " + ip + " ... "
-			while 1 and self.isStopped():
+			while 1 and not self.isStopped():
 				msg = so.recvfrom(50)
 				data = msg[0].split(':')
 				name = data[DATAGRAM_NAME_POS]

@@ -24,7 +24,7 @@ class Broadcaster(StoppableThread):
 	def run(self):
 		random.seed()
 		try:
-			while 1 and self.isStopped():
+			while 1 and not self.isStopped():
 				time.sleep(2)
 				print "Sending broadcast message"
 				self.sender.ping()

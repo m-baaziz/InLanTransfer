@@ -5,7 +5,6 @@ class Sender:
 		self.name = name
 		self.port = port
 		self.broadcastIp = broadcastIp
-		print broadcastIp
 		self.so = socket(AF_INET, SOCK_DGRAM)
 		self.so.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 

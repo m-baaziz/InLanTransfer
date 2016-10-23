@@ -1,27 +1,29 @@
-from socket import *
+from StoppableThread import StoppableThread
 import threading
+from socket import *
 
 DATAGRAM_NAME_POS = 0
 DATAGRAM_ACTION_POS = 1
 
-class Listener(threading.Thread):
+class Listener(StoppableThread):
 
-	def __init__(self, broadcastIp, port, users):
+	def __init__(self, broadcastIp, localIp, port, users):
 		print "Listener Thread initalizing"
+		StoppableThread.__init__(self)
 		self.broadcastIp = broadcastIp
+		self.localIp = localIp
 		self.port = port
 		self.users = users
-		threading.Thread.__init__(self)
 
-	def run(self):
+	def listen(self, ip):
 		so = socket(AF_INET, SOCK_DGRAM)
 		try:
-			so.bind((self.broadcastIp, self.port))
+			so.bind((ip, self.port))
 		except Exception as e:
 			print "Binding error (address already in use ?)"
 		else:
-			print "Listening ... "
-			while 1:
+			print "Listening on " + ip + " ... "
+			while 1 and self.isStopped():
 				msg = so.recvfrom(50)
 				data = msg[0].split(':')
 				name = data[DATAGRAM_NAME_POS]
@@ -38,3 +40,12 @@ class Listener(threading.Thread):
 		finally:
 			print "closing client socket"
 			so.close()
+
+	def run(self):
+		# frist, we duplicate a thread to listen to incoming targeted messages
+		th = threading.Thread(target= lambda: self.listen(self.localIp))
+		th.deamon = True
+		th.start()
+
+		# then we listen to broadcasts
+		self.listen(self.broadcastIp)

@@ -28,7 +28,7 @@ class Users:
 		self.mainFrame = mainFrame
 		self.sendRequest = sendRequest
 		self.frame = Frame(mainFrame)
-		self.frame.pack(side = TOP)
+		self.frame.pack(side = BOTTOM)
 		removeOldUsers = threading.Thread(target=self.removeOldUsers)
 		removeOldUsers.daemon = True
 		removeOldUsers.start()
@@ -78,5 +78,5 @@ class Users:
 			child.destroy()
 		if len(self._users) > 0:
 			for user in self._users:
-				userButton = Button(self.frame, text = user.name(), command=self.sendRequest)
+				userButton = Button(self.frame, text = user.name(), command= lambda: self.sendRequest(user.ip()))
 				userButton.pack(side = BOTTOM)

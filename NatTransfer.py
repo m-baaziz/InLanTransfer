@@ -2,71 +2,114 @@ from lib.Broadcaster import Broadcaster
 from lib.Listener import Listener
 from lib.Users import Users
 from lib.Sender import Sender
+from lib.ErrorDisplayer import ErrorDisplayer
 import sys
 import time
 import Tkinter
 from Tkinter import *
 import threading
+from socket import *
 
-BROADCAST_IP = "192.168.56.255"
 PORT = 825
+DEFAULT_BROADCAST_IP = "192.168.0.255"
 
-# actions
-BROADCAST = 1
-LISTEN = 0
+gui = Tk()
 
-#GUI
-
-FRAME_WIDTH = 200
-FRAME_HEIGHT = 100
+error = StringVar()
+errorDisplayer = ErrorDisplayer(error)
 
 class NatTransfer:
-	def __init__(self, action):
-		self.action = int(action)
-		self.sender = Sender("John", BROADCAST_IP, PORT)
-		#Threads
-		if self.action == BROADCAST:
-			self.broadcaster = Broadcaster(self.sender)
-			self.broadcaster.daemon = True
-		if self.action == LISTEN:
-			# GUI
-			self.gui = Tk()
-			self.frame = Frame(self.gui, width=FRAME_WIDTH, height=FRAME_HEIGHT)
-			self.users = Users(self.frame, self.sendRequest)
+	def __init__(self):
+		self.broadcastIp = StringVar(value=DEFAULT_BROADCAST_IP)
+		self.localIp = self.computeLocalIp()
+		self.name = StringVar(value="John")
 
-			self.listener = Listener(BROADCAST_IP, PORT, self.users)
-			self.listener.daemon = True
+		# Threads ans Sender setup
+		self.setupNetworking()
+		# GUI : users buttons
+		self.users = Users(frame, self.sendRequest)
+
+	def setupNetworking(self):
+		self.sender = Sender(self.name.get(), self.broadcastIp.get(), PORT)
+		self.broadcaster = Broadcaster(self.sender)
+		self.broadcaster.daemon = True
+		self.listener = Listener(self.broadcastIp.get(), self.localIp, PORT, self.users)
+		self.listener.daemon = True
 
 	def run(self):
+		if threadsStarted == True:
+			# This happens when we change the broadcast address
+			self.broadcaster.stop()
+			self.listener.stop()
+			self.setupNetworking()
+		threadsStarted = True
 		try:
-			if self.broadcaster:
-				self.broadcaster.start()
+			self.broadcaster.start()
 		except Exception as e:
-			if self.action == 1:
-				print "Error in Broadcaster Thread"
+			print "Error in Broadcaster Thread"
 		try:
-			if self.listener:
-				self.listener.start()
-				self.display()
+			self.listener.start()
 		except Exception as e:
-			if self.action == 0:
-				print "Error in Listener Thread"
-				raise
-		while 1:
-			time.sleep(1)
+			print "Error in Listener Thread"
+			raise
 
-	def sendRequest(self):
-		self.sender.request("192.168.0.13")
+	def sendRequest(self, ip):
+		print "sending REQUEST to " + ip
+		self.sender.request(ip)
 
-	def display(self):
-		self.gui.wm_title("NatTransfer")
-		self.frame.pack(side = BOTTOM)
-		label = Label(self.frame, text="filepath")
-		label.pack(side=LEFT)
-		entry = Entry(self.frame)
-		entry.pack(side=RIGHT)
-		self.gui.mainloop()
+	# Need internet connection
+	def computeBroadcastIp(self):
+		s = socket(AF_INET, SOCK_DGRAM)
+		try:
+			s.connect(("google.com",80))
+		except:
+			errorDisplayer.set("Need internet connection")
+		else:
+			address = s.getsockname()[0].split('.')
+			address[3] = "255"
+			address = ('.').join(address)
+			self.broadcastIp.set(address)
+			self.computeLocalIp()
+		finally:
+			s.close()
+
+	# Need broadcast ip
+	def computeLocalIp(self)
+		s = socket(AF_INET, SOCK_DGRAM)
+		try:
+			s.connect((self.broadcastIp,80))
+		except:
+			errorDisplayer.set("Need to know the broadcast ip to compute the local ip")
+		else:
+			address = s.getsockname()[0]
+			self.localIp = address
+		finally:
+			s.close()
 
 
-app = NatTransfer(sys.argv[1])
-app.run()
+gui.wm_title("NatTransfer")
+errorFrame = Frame(gui)
+errorFrame.pack(side=TOP)
+errorLabel = Label(errorFrame, textvariable=errorDisplayer.error, fg="red")
+errorLabel.pack(side=BOTTOM)
+frame = Frame(gui)
+frame.pack(side=TOP)
+subFrame = Frame(gui)
+subFrame.pack(side=BOTTOM)
+label = Label(subFrame, text="Broadcast Address : ")
+label.pack(side=LEFT)
+
+app = NatTransfer()
+
+
+entry = Entry(subFrame, textvariable=app.broadcastIp)
+entry.pack(side=LEFT)
+computeBroadcastBtn = Button(subFrame, text="Calculate", command= app.computeBroadcastIp)
+computeBroadcastBtn.pack(side=LEFT)
+startBtn = Button(subFrame, text="Start", command= app.run)
+startBtn.pack(side=LEFT)
+
+threadsStarted = False
+
+
+gui.mainloop()

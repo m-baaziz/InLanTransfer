@@ -23,8 +23,8 @@ class Sender:
 		msg = self.name + ":PING:"
 		self.send(msg, self.broadcastIp)
 
-	def request(self, ip, data):
-		msg = self.name + ":REQUEST:" + data + ":"
+	def request(self, ip, filename, size):
+		msg = self.name + ":REQUEST:" + filename + ":" + str(size)
 		self.send(msg, ip)
 
 	def end(self):
@@ -33,12 +33,10 @@ class Sender:
 
 	def accept(self, ip, filename):
 		msg = self.name + ":ACCEPT:" + filename
-		print msg
 		self.send(msg, ip)
 
 	def refuse(self, ip, filename):
 		msg = self.name + ":REFUSE:" + filename
-		print msg
 		self.send(msg, ip)
 
 	def data(self, ip, filename, filesize, datasize, data):

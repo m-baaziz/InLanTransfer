@@ -47,14 +47,12 @@ class NatTransfer:
 		self.sender = Sender(self.name.get(), self.broadcastIp.get(), PORT)
 		self.broadcaster = Broadcaster(self.sender)
 		self.broadcaster.daemon = True
-		self.broadcastListener = Listener(self.broadcastIp.get(), PORT, self.users, self.sender, self.waitingFilesToSend)
-		self.broadcastListener.daemon = True
-		self.localListener = Listener(self.localIp, PORT, self.users, self.sender, self.waitingFilesToSend)
-		self.localListener.deamon = True
+		self.listener = Listener('', PORT, self.users, self.sender, self.waitingFilesToSend)
+		self.listener.deamon = True
 		self.users.activate()
 
 	def run(self):
-		# Threads ans Sender setup
+		# Threads and Sender setup
 		if self.threadsStarted == True:
 			# This happens when we change the broadcast address
 			self.endThreads()
@@ -67,30 +65,23 @@ class NatTransfer:
 			print "Error in Broadcaster Thread"
 			raise
 		try:
-			self.broadcastListener.start()
-		except Exception as e:
-			print "Error in Broadcast Listener Thread"
-			raise
-		try:
-			self.localListener.start()
+			self.listener.start()
 		except Exception as e:
 			print "Error in Local Listener Thread"
 			raise
 
 	def sendRequest(self, ip):
 		print "sending REQUEST to " + ip
-		filepath = tkFileDialog.askopenfilename()
+		filepath = tkFileDialog.askopenfilename().encode('utf-8')
 		filename = filepath.split('/')
 		filename = filename[len(filename)-1]
-		print filepath
 		try:
 			size = os.path.getsize(filepath)
 		except:
 			print "file " + filename + "unreachble"
 		else:
 			size = byteToHumaneReadble(size)
-			print size
-		self.sender.request(ip, filename+":"+size)
+		self.sender.request(ip, filename, size)
 		self.waitingFilesToSend[filename] = filepath
 
 	# Need internet connection
@@ -123,13 +114,11 @@ class NatTransfer:
 
 	def endThreads(self):
 		print "Waiting for threads to finish"
-		self.localListener.stop()
-		self.broadcastListener.stop()
+		self.listener.stop()
 		self.broadcaster.stop()
 		self.users.terminate()
-		self.localListener.join()
+		self.listener.join()
 		self.broadcaster.join()
-		self.broadcastListener.join()
 
 
 	def terminate(self):

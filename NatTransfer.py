@@ -3,7 +3,7 @@ from lib.Listener import Listener
 from lib.Users import Users
 from lib.Sender import Sender
 from lib.ErrorDisplayer import ErrorDisplayer
-import signal, sys, time, os, humanize
+import signal, sys, time, os
 import Tkinter, Tkconstants, tkFileDialog
 from Tkinter import *
 import threading
@@ -16,6 +16,13 @@ gui = Tk()
 
 error = StringVar()
 errorDisplayer = ErrorDisplayer(error)
+
+def byteToHumaneReadble(num, suffix='B'):
+  for unit in ['','K','M','G','T','P','E','Z']:
+      if abs(num) < 1024.0:
+          return "%3.1f%s%s" % (num, unit, suffix)
+      num /= 1024.0
+  return "%.1f%s%s" % (num, 'Yi', suffix)
 
 class NatTransfer:
 	def __init__(self):
@@ -81,7 +88,7 @@ class NatTransfer:
 		except:
 			print "file " + filename + "unreachble"
 		else:
-			size = humanize.naturalsize(size)
+			size = byteToHumaneReadble(size)
 			print size
 		self.sender.request(ip, filename+":"+size)
 		self.waitingFilesToSend[filename] = filepath

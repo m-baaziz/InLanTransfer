@@ -4,6 +4,9 @@ from socket import *
 from select import select
 import tkMessageBox
 import os
+import Tkinter
+from Tkinter import *
+import ttk
 
 READ_SOCKET_TIMEOUT = 3
 
@@ -16,9 +19,16 @@ DATAGRAM_DATA_POS = 5
 
 BLOCKSIZE = 2024
 
+def byteToHumaneReadble(num, suffix='B'):
+  for unit in ['','K','M','G','T','P','E','Z']:
+      if abs(num) < 1024.0:
+          return "%3.1f%s%s" % (num, unit, suffix)
+      num /= 1024.0
+  return "%.1f%s%s" % (num, 'Yi', suffix)
+
 class Listener(StoppableThread):
 
-	def __init__(self, ip, port, users, sender, waitingFilesToSend):
+	def __init__(self, ip, port, users, sender, waitingFilesToSend, progressBarFrame):
 		print "Listener Thread initalizing"
 		StoppableThread.__init__(self)
 		self.ip = ip
@@ -28,6 +38,8 @@ class Listener(StoppableThread):
 		self.waitingFilesToSend = waitingFilesToSend
 		self.receivedFilesDescriptors = {}
 		self.sentFilesDescriptors = {}
+		self.progressBarFrame = progressBarFrame
+		self.bar = None
 
 	def run(self):
 		so = socket(AF_INET, SOCK_DGRAM)
@@ -54,13 +66,15 @@ class Listener(StoppableThread):
 						elif action == "REQUEST":
 							try:
 								filename = data[DATAGRAM_FILENAME_POS]
-								size = data[DATAGRAM_FILESIZE_POS]
-								message = name + " wants to send you " + filename + " (" + size + ")"
+								size = int(data[DATAGRAM_FILESIZE_POS])
+								message = name + " wants to send you " + filename + " (" + str(byteToHumaneReadble(size)) + ")"
 								result = tkMessageBox.askquestion("Receive", message)
 								if result == "yes":
 									self.sender.accept(ip, filename)
-									#fd = open(filename, 'a')
-									#self.receivedFilesDescriptors[filename] = fd
+									self.bar = ttk.Progressbar(self.progressBarFrame, orient="horizontal", mode="determinate")
+									self.bar["maximum"] = size
+									self.bar["value"] = 0
+									self.bar.pack(side=BOTTOM)
 								else:
 									self.sender.refuse(ip, filename)
 							except Exception as e:
@@ -98,18 +112,18 @@ class Listener(StoppableThread):
 							datasize = data[DATAGRAM_DATASIZE_POS]
 							dataContent = data[DATAGRAM_DATA_POS]
 							realDataSize = len(dataContent)
-							print "Receiving " + str(realDataSize) + " of " + filesize
 							try:
 								with open(filename, 'a') as fd:
 									fd.write(dataContent)
 								trueSize = os.path.getsize("./"+filename)
+								self.bar["value"] = trueSize
 								self.sender.ack(ip, filename, filesize, trueSize)
 							except Exception as e:
 								print e
 								raise
 						elif action == "EOF":
-							filename = data[DATAGRAM_FILENAME_POS]
-
+							print "Transfer Complete"
+							self.bar.destroy()
 		finally:
 			print "closing client socket ("+self.ip+")"
 			so.close()

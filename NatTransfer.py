@@ -17,13 +17,6 @@ gui = Tk()
 error = StringVar()
 errorDisplayer = ErrorDisplayer(error)
 
-def byteToHumaneReadble(num, suffix='B'):
-  for unit in ['','K','M','G','T','P','E','Z']:
-      if abs(num) < 1024.0:
-          return "%3.1f%s%s" % (num, unit, suffix)
-      num /= 1024.0
-  return "%.1f%s%s" % (num, 'Yi', suffix)
-
 class NatTransfer:
 	def __init__(self):
 		self.broadcastIp = StringVar(value=DEFAULT_BROADCAST_IP)
@@ -47,7 +40,7 @@ class NatTransfer:
 		self.sender = Sender(self.name.get(), self.broadcastIp.get(), PORT)
 		self.broadcaster = Broadcaster(self.sender)
 		self.broadcaster.daemon = True
-		self.listener = Listener('', PORT, self.users, self.sender, self.waitingFilesToSend)
+		self.listener = Listener('', PORT, self.users, self.sender, self.waitingFilesToSend, progressBarFrame)
 		self.listener.deamon = True
 		self.users.activate()
 
@@ -80,7 +73,6 @@ class NatTransfer:
 		except:
 			print "file " + filename + "unreachble"
 		else:
-			size = byteToHumaneReadble(size)
 			self.sender.request(ip, filename, size)
 			self.waitingFilesToSend[filename] = filepath
 
@@ -159,6 +151,9 @@ nameLabel = Label(nameFrame, text="Name : ")
 nameLabel.pack(side=LEFT)
 nameEntry = Entry(nameFrame, textvariable=app.name)
 nameEntry.pack(side=LEFT)
+
+progressBarFrame = Frame(gui)
+progressBarFrame.pack(side=BOTTOM)
 
 gui.protocol("WM_DELETE_WINDOW", app.terminate)
 gui.mainloop()

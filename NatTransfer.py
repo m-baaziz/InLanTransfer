@@ -6,7 +6,7 @@ from lib.ErrorDisplayer import ErrorDisplayer
 import signal
 import sys
 import time
-import Tkinter
+import Tkinter, Tkconstants, tkFileDialog
 from Tkinter import *
 import threading
 from socket import *
@@ -66,6 +66,11 @@ class NatTransfer:
 
 	def sendRequest(self, ip):
 		print "sending REQUEST to " + ip
+		file_opt = options =  {}
+		options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
+		options['parent'] = gui
+		filename = tkFileDialog.askopenfilename(**options)
+		print filename
 		self.sender.request(ip)
 
 	# Need internet connection

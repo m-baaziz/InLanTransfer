@@ -92,7 +92,7 @@ class Users:
 					child.destroy()
 				if len(self._users) > 0:
 					for user in self._users:
-						userButton = Button(self.frame, text = user.name(), command= lambda: self.sendRequest(user.ip()))
+						userButton = Button(self.frame, text = user.name(), command= lambda user=user: self.sendRequest(user.ip()))
 						userButton.pack(side = BOTTOM)
 			except:
 				pass

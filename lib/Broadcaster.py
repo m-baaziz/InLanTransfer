@@ -12,9 +12,9 @@ class Broadcaster(StoppableThread):
 
 
 	def run(self):
-		while 1 and not self.isStopped():
+		while not self.isStopped():
 			time.sleep(2)
-			print "Sending broadcast message"
+			# print "Sending broadcast message"
 			self.sender.ping()
 		self.sender.end()
 		exit(1)

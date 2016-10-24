@@ -3,9 +3,7 @@ from lib.Listener import Listener
 from lib.Users import Users
 from lib.Sender import Sender
 from lib.ErrorDisplayer import ErrorDisplayer
-import signal
-import sys
-import time
+import signal, sys, time, os, humanize
 import Tkinter, Tkconstants, tkFileDialog
 from Tkinter import *
 import threading
@@ -26,17 +24,25 @@ class NatTransfer:
 		self.computeLocalIp()
 		self.broadcastIp.trace('w', self.computeLocalIp)
 		self.name = StringVar(value="John")
+		self.name.trace('w', self.parseName)
+		self.waitingFilesToSend = {}
+
 		self.threadsStarted = False
 		# GUI : users buttons
 		self.users = Users(frame, self.sendRequest)
+
+
+	def parseName(self, *args):
+		name = self.name.get().split(':')
+		self.name.set(''.join(name))
 
 	def setupNetworking(self):
 		self.sender = Sender(self.name.get(), self.broadcastIp.get(), PORT)
 		self.broadcaster = Broadcaster(self.sender)
 		self.broadcaster.daemon = True
-		self.broadcastListener = Listener(self.broadcastIp.get(), PORT, self.users)
+		self.broadcastListener = Listener(self.broadcastIp.get(), PORT, self.users, self.sender, self.waitingFilesToSend)
 		self.broadcastListener.daemon = True
-		self.localListener = Listener(self.localIp, PORT, self.users)
+		self.localListener = Listener(self.localIp, PORT, self.users, self.sender, self.waitingFilesToSend)
 		self.localListener.deamon = True
 		self.users.activate()
 
@@ -66,12 +72,19 @@ class NatTransfer:
 
 	def sendRequest(self, ip):
 		print "sending REQUEST to " + ip
-		file_opt = options =  {}
-		options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-		options['parent'] = gui
-		filename = tkFileDialog.askopenfilename(**options)
-		print filename
-		self.sender.request(ip)
+		filepath = tkFileDialog.askopenfilename()
+		filename = filepath.split('/')
+		filename = filename[len(filename)-1]
+		print filepath
+		try:
+			size = os.path.getsize(filepath)
+		except:
+			print "file " + filename + "unreachble"
+		else:
+			size = humanize.naturalsize(size)
+			print size
+		self.sender.request(ip, filename+":"+size)
+		self.waitingFilesToSend[filename] = filepath
 
 	# Need internet connection
 	def computeBroadcastIp(self):

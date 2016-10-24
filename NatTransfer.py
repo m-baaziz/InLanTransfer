@@ -81,8 +81,8 @@ class NatTransfer:
 			print "file " + filename + "unreachble"
 		else:
 			size = byteToHumaneReadble(size)
-		self.sender.request(ip, filename, size)
-		self.waitingFilesToSend[filename] = filepath
+			self.sender.request(ip, filename, size)
+			self.waitingFilesToSend[filename] = filepath
 
 	# Need internet connection
 	def computeBroadcastIp(self):

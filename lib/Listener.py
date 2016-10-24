@@ -115,7 +115,7 @@ class Listener(StoppableThread):
 							try:
 								with open(filename, 'a') as fd:
 									fd.write(dataContent)
-								trueSize = os.path.getsize("./"+filename)
+								trueSize = os.path.getsize(filename)
 								self.bar["value"] = trueSize
 								self.sender.ack(ip, filename, filesize, trueSize)
 							except Exception as e:

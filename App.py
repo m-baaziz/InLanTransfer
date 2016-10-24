@@ -3,21 +3,21 @@ from lib.Listener import Listener
 from lib.Users import Users
 from lib.Sender import Sender
 from lib.ErrorDisplayer import ErrorDisplayer
-import signal, sys, time, os
+import sys, time, os
 import Tkinter, Tkconstants, tkFileDialog
 from Tkinter import *
 import threading
 from socket import *
 
 PORT = 825
-DEFAULT_BROADCAST_IP = "192.168.0.255"
+DEFAULT_BROADCAST_IP = ""
 
 gui = Tk()
 
 error = StringVar()
 errorDisplayer = ErrorDisplayer(error)
 
-class NatTransfer:
+class App:
 	def __init__(self):
 		self.broadcastIp = StringVar(value=DEFAULT_BROADCAST_IP)
 		self.localIp = ""
@@ -123,7 +123,7 @@ class NatTransfer:
 		
 
 
-gui.wm_title("NatTransfer")
+gui.wm_title("InLanTransfer")
 errorFrame = Frame(gui)
 errorFrame.pack(side=TOP)
 errorLabel = Label(errorFrame, textvariable=errorDisplayer.error, fg="red")
@@ -135,7 +135,7 @@ subFrame.pack(side=BOTTOM)
 label = Label(subFrame, text="Broadcast Address : ")
 label.pack(side=LEFT)
 
-app = NatTransfer()
+app = App()
 
 
 entry = Entry(subFrame, textvariable=app.broadcastIp)

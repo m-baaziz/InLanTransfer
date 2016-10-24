@@ -6,7 +6,7 @@ from Tkinter import Frame, BOTTOM, TOP, Button
 NAME_POSITION = 0
 IP_POSITION = 1
 LAST_UPDATE_POSITION = 2
-MAX_ALIVE_DELAY = 30
+MAX_ALIVE_DELAY = 20
 
 class User:
 	def __init__(self, name, ip):
@@ -24,6 +24,7 @@ class User:
 class Users:
 	# class containing the conected users array
 	def __init__(self, mainFrame, sendRequest):
+		self.active = False
 		self._users = []
 		self.mainFrame = mainFrame
 		self.sendRequest = sendRequest
@@ -32,6 +33,9 @@ class Users:
 		removeOldUsers = threading.Thread(target=self.removeOldUsers)
 		removeOldUsers.daemon = True
 		removeOldUsers.start()
+
+	def activate(self):
+		self.active = True
 
 	def has(self, user):
 		for u in self._users:
@@ -53,13 +57,17 @@ class Users:
 		self._users = users
 		self.updateFrame()
 
+	def terminate(self):
+		self.clear()
+		self.active = False
+
 	def clear(self):
 		self._users = []
 		self.updateFrame()
 
 	# the user list should not contain users who didnt ping for the last $(MAX_ALIVE_DELAY) seconds
 	def removeOldUsers(self):
-		while True:
+		while self.active:
 			time.sleep(MAX_ALIVE_DELAY)
 			users = []
 			for user in self._users:
@@ -78,9 +86,13 @@ class Users:
 		return len(self._users)
 
 	def updateFrame(self):
-		for child in self.frame.winfo_children():
-			child.destroy()
-		if len(self._users) > 0:
-			for user in self._users:
-				userButton = Button(self.frame, text = user.name(), command= lambda: self.sendRequest(user.ip()))
-				userButton.pack(side = BOTTOM)
+		if self.active:
+			try:
+				for child in self.frame.winfo_children():
+					child.destroy()
+				if len(self._users) > 0:
+					for user in self._users:
+						userButton = Button(self.frame, text = user.name(), command= lambda: self.sendRequest(user.ip()))
+						userButton.pack(side = BOTTOM)
+			except:
+				pass

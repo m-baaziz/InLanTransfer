@@ -3,6 +3,7 @@ from lib.Listener import Listener
 from lib.Users import Users
 from lib.Sender import Sender
 from lib.ErrorDisplayer import ErrorDisplayer
+import signal
 import sys
 import time
 import Tkinter
@@ -23,37 +24,44 @@ class NatTransfer:
 		self.broadcastIp = StringVar(value=DEFAULT_BROADCAST_IP)
 		self.localIp = ""
 		self.computeLocalIp()
+		self.broadcastIp.trace('w', self.computeLocalIp)
 		self.name = StringVar(value="John")
 		self.threadsStarted = False
 		# GUI : users buttons
 		self.users = Users(frame, self.sendRequest)
-		# Threads ans Sender setup
-		self.setupNetworking()
-
 
 	def setupNetworking(self):
 		self.sender = Sender(self.name.get(), self.broadcastIp.get(), PORT)
 		self.broadcaster = Broadcaster(self.sender)
 		self.broadcaster.daemon = True
-		self.listener = Listener(self.broadcastIp.get(), self.localIp, PORT, self.users)
-		self.listener.daemon = True
+		self.broadcastListener = Listener(self.broadcastIp.get(), PORT, self.users)
+		self.broadcastListener.daemon = True
+		self.localListener = Listener(self.localIp, PORT, self.users)
+		self.localListener.deamon = True
+		self.users.activate()
 
 	def run(self):
+		# Threads ans Sender setup
 		if self.threadsStarted == True:
 			# This happens when we change the broadcast address
-			self.broadcaster.stop()
-			self.listener.stop()
-			self.setupNetworking()
-			self.users.clear()
+			self.endThreads()
+
+		self.setupNetworking()
 		self.threadsStarted = True
 		try:
 			self.broadcaster.start()
 		except Exception as e:
 			print "Error in Broadcaster Thread"
+			raise
 		try:
-			self.listener.start()
+			self.broadcastListener.start()
 		except Exception as e:
-			print "Error in Listener Thread"
+			print "Error in Broadcast Listener Thread"
+			raise
+		try:
+			self.localListener.start()
+		except Exception as e:
+			print "Error in Local Listener Thread"
 			raise
 
 	def sendRequest(self, ip):
@@ -72,12 +80,11 @@ class NatTransfer:
 			address[3] = "255"
 			address = ('.').join(address)
 			self.broadcastIp.set(address)
-			self.computeLocalIp()
 		finally:
 			s.close()
 
 	# Need broadcast ip
-	def computeLocalIp(self):
+	def computeLocalIp(self, *args):
 		s = socket(AF_INET, SOCK_DGRAM)
 		try:
 			s.connect((self.broadcastIp.get(),80))
@@ -88,6 +95,26 @@ class NatTransfer:
 			self.localIp = address
 		finally:
 			s.close()
+
+	def endThreads(self):
+		print "Waiting for threads to finish"
+		self.localListener.stop()
+		self.broadcastListener.stop()
+		self.broadcaster.stop()
+		self.users.terminate()
+		self.localListener.join()
+		self.broadcaster.join()
+		self.broadcastListener.join()
+
+
+	def terminate(self):
+		try:
+			self.endThreads()
+		except:
+			print "Threads were not initialized"
+		finally:
+			gui.destroy()
+		
 
 
 gui.wm_title("NatTransfer")
@@ -112,6 +139,12 @@ computeBroadcastBtn.pack(side=LEFT)
 startBtn = Button(subFrame, text="Start", command= app.run)
 startBtn.pack(side=LEFT)
 
-app.run()
+nameFrame = Frame(gui)
+nameFrame.pack(side=BOTTOM)
+nameLabel = Label(nameFrame, text="Name : ")
+nameLabel.pack(side=LEFT)
+nameEntry = Entry(nameFrame, textvariable=app.name)
+nameEntry.pack(side=LEFT)
 
+gui.protocol("WM_DELETE_WINDOW", app.terminate)
 gui.mainloop()

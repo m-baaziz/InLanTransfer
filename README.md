@@ -46,5 +46,6 @@ If the remote node accepts, the file transfer proceeds : the file is sent chunk 
   datagramme = $NAME:END  -> the user $NAME disconected
 
 ## Demo
+[![Demonstration Video](http://img.youtube.com/vi/O6nVn01DYBQ/0.jpg)](http://www.youtube.com/watch?v=O6nVn01DYBQ)
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=O6nVn01DYBQ" target="_blank"><img src="http://img.youtube.com/vi/O6nVn01DYBQ/0.jpg" alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
